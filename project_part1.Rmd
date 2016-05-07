@@ -1,0 +1,84 @@
+---
+title: 'Coursera Statistical Inference Project: Part I'
+subtitle: '**A large sampling simulation of the exponential distribution**'
+author: "Giuseppe Di Bernardo"
+date: "February 29, 2016"
+output: pdf_document
+---
+
+This is the Assignment Project part I of the Coursera Statistical Inference course. We will explore the properties of the **exponential distribution** in `R`, and compare this one with the results of the **Central Limit Theorem**.
+
+From the theory, we know that the **PDF** (probability density finction) corresponding to the exponential distribution is $f_{X}(x) = \lambda e^{-\lambda x}, x>0$. In the statistical software package `R` we can get it by invoking the command `rexp(sample_size, rate = lambda)`, where `sample_size` is the size of our sample, and `lambda` the rate parameter. 
+The goal is to investigate the distribution of the averages (sample means) of $N = 40$ exponential distributions, by running a large number of simulations (e.g $10^{3}$). 
+
+Before showing the analysis performed - and the results obtained as well - we remind to the reader that the exponential distribution with parameter $\lambda$ has the mean value $\mu_{X} = 1/\lambda$, and the variance $\sigma_{X}^{2}$ given by $1/\lambda^{2}$. Through all our simulations, we set $\lambda = 0.2$.
+Therefore, theoretically we expect a mean value of $5$ and a standard deviation $\rm sd = \sqrt{\sigma_{X}^2}$ of $5$ as well.
+
+### 1. Simulations 
+Below, it is the chunck code used to perform a thousand of simulations of exponential distributions. 
+
+```{r, echo = TRUE, cache=TRUE}
+set.seed(12121)
+lambda <- 0.2
+sample_size <- 40 
+nsim <- 1.0e3
+exp_sample <- rexp(sample_size, rate = lambda)
+```
+
+Here, `exp_sample` is the vector corresponding to one sample realization of the exponential distribution, of size $40$ outcomes. Here is a brief insights into the data:  
+```{r, echo = TRUE, cache=TRUE}
+head(exp_sample)
+tail(exp_sample)
+summary(exp_sample)
+sd(exp_sample)
+```
+
+The funtion `replicate()` allows us to repeat many times ($1,000$) the indipendent identically distributed (**i.i.d**) random variables $X_{1},..., X_{1e3}$, to get an idea of the distribution of the averages quantities.  
+
+```{r, echo=TRUE,cache=TRUE}
+repeated_exp <- replicate(nsim, mean(rexp(n = sample_size, rate = lambda)))
+```
+
+Here, `repeated_exp` is the vector containing the means of a thousand samples sized $40$, drawn without replacement from an exponential distribution.  
+
+```{r, echo=TRUE, cache=TRUE}
+summary(repeated_exp)
+sdeviation <- sd(repeated_exp, na.rm = FALSE)
+sdeviation
+```
+## 2. Results and Plots
+
+The Central Limit Theorem (**CLT**) assures us that the so-called **sample mean**, $\bar{X}_{1\rm e3} = \frac{1}{N}\sum_{i = 1}^{10^3} X_{i}$, has a distribution which is approximately Normal $N(\mu, \sigma^{2}/n)$, with mean $\mu_{X}$ and variance $\sigma_{X}^{2}/N$.
+The observed mean of the large sampling distribution is $4.994$, perfectly in agreement with the theoretical expectation value of $5$, as previously stated. And the standard deviation value got from the simulations is $~0.777$, which agrees with what is predicted from the **CLT**, i.e. $(1/\lambda)/\sqrt{N} = 0.791$. The two numbers would be even closer with larger samples. 
+We show in the following plot what we have argued so far in our analysis:
+
+
+```{r, echo=FALSE, cache=FALSE}
+# plot the histogram of averages
+hist(repeated_exp, breaks=30, prob=TRUE,
+     col="lightgreen",
+     main="Distribution of the sample means,
+     drawn from exponential distribution with rate 0.2",
+     xlab="Outcome values", 
+     ylab="Probability Density Function")
+# density of the averages of samples
+lines(density(repeated_exp), lwd = 2)
+# theoretical center of distribution
+abline(v=1/lambda, col="red")
+# theoretical density of the averages of samples
+xfit <- seq(min(repeated_exp), max(repeated_exp), length=100)
+yfit <- dnorm(xfit, mean=1/lambda, sd=(1/lambda/sqrt(sample_size)))
+lines(xfit, yfit, lwd=2, col="red", lty=1)
+# add legend
+legend('topright', c("observed", "normal"), lty=c(1,1), col=c("black", "red"))
+```
+
+Clearly we observe that the averages of samples (black line) follow closely a theoretical normal distribution (red line). The normal behaviour of our sampling distribution is evident also by looking at the quantile - quantile plot: 
+
+```{r, echo = FALSE, cache = FALSE}
+
+qqnorm(repeated_exp, main = "Normal Q-Q Plot",
+       xlab="Theoretical Quantiles", ylab="Sample Quantiles", 
+       plot.it=TRUE) 
+qqline(repeated_exp)
+```

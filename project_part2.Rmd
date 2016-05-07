@@ -1,0 +1,69 @@
+---
+title: "Coursera Statistical Inference Project: Part II"
+subtitle: '**Basically Inferential Data Analysis**'
+author: "Giuseppe Di Bernardo"
+date: "February 29, 2016"
+output: pdf_document
+---
+
+This is the Assignment Project part II of the Coursera Statistical Inference course. 
+We are going to analyze the `ToothGrowth` data provided in the `R` dataset packages, and statistically infer conclusions about the relationship between the length of odontoblasts (cells responsible for tooth growth) and the `dose` levels of vitamin C (in milligrams/day), by one of two delivery methods (`supp` factor, e.g. orange juice `OJ`, or ascorbic acid coded as `VC`). 
+
+### 1. Data Analysis
+Preliminarly, we perform a basic exploratory data analysis. 
+
+```{r, echo=FALSE, cache=FALSE}
+library(datasets)
+library(ggplot2)
+data <- ToothGrowth
+g <- ggplot(data = ToothGrowth, aes(x = as.factor(`dose`), 
+                                           y = `len`, 
+                                           fill = `supp`)) 
+
+g <- g + geom_bar(stat = "identity")
+g <- g + xlab("Dose in mg/day") 
+g <- g + ylab('Tooth length')
+g <- g + facet_grid((.~supp))
+g <- g + guides(fill = guide_legend((title = "Supplement type")))
+print(g)
+
+```
+
+A clear correlation between the tooth length and the dose levels of vitamin C - for both delivery methods - can be oserved in the above histogram plot: we may conclude that the larger is the dosage, the longer is the tooth. 
+However, the relation between the length and the supplement type is not so immediate, 
+at least at this stage. In fact, at low dosage, orange juice seems to positively correlate with longer teeth, more than the ascorbic acid, but at higher dosages this difference is not significant anymore, as can be observed in the below boxplot:
+
+```{r, echo=FALSE,cache=FALSE}
+g <- ggplot(data = ToothGrowth, aes(x = as.factor(`supp`), 
+                                           y = `len`)) 
+g <- g + geom_boxplot(aes(fill = supp))
+g <- g + facet_grid((.~dose))
+g <- g + xlab("Delivery Method") 
+g <- g + ylab('Tooth length')
+g <- g + guides(fill = guide_legend((title = "Supp factor")))
+print(g)
+```
+
+### 2. Statistical Inference
+Let us now quantify the effect of the dose on the length of the teeth. 
+In particular, we may be interested in answering the following question: how much of the variability in the tooth length, if any, can be explained by the supplement type (i.e., orange juice or ascorbic juice)?
+We claim to address this issue through a linear regression analysis, by using the method `lm` of the `R` linear regression fit:  
+
+```{r, echo=TRUE, cache=FALSE}
+fit <- lm(len ~ dose + supp, data = ToothGrowth)
+summary(fit)
+```
+
+According to the `R-squared` value, we infer that the $70\%$ of the variation in the data are explained by the adopted model. Regarding the correlation with the amount of the dose, we notice that the corresponding coefficient is $9.764$, which means that increasing the delivered dose of $1 mg$, all else equal (i.e. no change in the supplement type), would increase the length of the teeth of corresponding $9.764$ units. 
+The intercept is equal to $9.273$, i.e. without supplement of vitamic C we get the average tooth lenght of $9.2725$ units. The `suppVC` coefficient is for the supplement type categorical variable. The computed coefficient has a value of $-3.7$, which implies a decrease of $3.7$ units in the tooth length by delivering a given dose as ascorbic acid, without changing the total dose.
+Then we conclude that the lenght of the teeth will increase of a same amount of $3.7$ units if the delivering method of dosage is the orange juice `OJ`. 
+Finally, to test the statistical significance of linear regression coeffcients (`intercept`, `dose` and `suppVC`) we show the results of the $95\%$ of confidence intervals for the variables of dose and delivery methods, and the intercept as well. 
+
+```{r, echo=TRUE,cache=FALSE}
+confint(fit)
+```
+
+The null hypothesis $H_{0}$ corresponds to all null coefficients, and the hope is to reject $H_{0}$, i.e. variation of tooth length cannot be explained by the variable used. From the above computation values, we conclude that our coefficient estimated are statistically significant at the $5\%$ of level (i.e. we cannot reject the alternative hypothesis $H_{a}$, that coeffiecients $\neq 0$).  
+
+
+
